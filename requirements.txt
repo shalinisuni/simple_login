@@ -1,8 +1,0 @@
-DateTime==5.3
-Flask==2.2.2
-Flask-Mail==0.9.1
-Flask-MySQLdb==1.0.1
-gunicorn==21.2.0
-Jinja2==3.1.2
-pyodbc==4.0.39
-SQLAlchemy==1.2.19
