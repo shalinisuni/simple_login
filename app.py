@@ -1,4 +1,4 @@
-import pyodbc
+# import pyodbc
 from flask import Flask, render_template,request,redirect,session,flash,url_for
 
 app = Flask(__name__)
