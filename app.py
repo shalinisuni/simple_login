@@ -1,52 +1,49 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for
 import pyodbc
-import hashlib
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'demoapp'
 
-# Define your Azure SQL connection parameters
-server = 'solutionkraft.database.windows.net'
-database = 'demosqlpro'
-username = 'solutionkraft'
-password = '{Solnkraft24}'
-driver = '{ODBC Driver 18 for SQL Server}'
-connectionString = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
-conn = pyodbc.connect(connectionString)
-cursor = conn.cursor()
+# Configure your Azure SQL database connection
+app.config['DB_CONNECTION_STRING'] = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=solutionkraft.database.windows.net;DATABASE=demosqlpro;UID=solutionkraft;PWD=Solnkraft24;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+
+def connect_to_database():
+    return pyodbc.connect(app.config['DB_CONNECTION_STRING'])
 
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
 @app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        # hashed_password = hashlib.md5(password.encode()).hexdigest()
+    email = request.form['email']
+    password = request.form['password']
 
-        # Execute SQL query to check login credentials
-        cursor.execute("SELECT user_id FROM users WHERE email = ? AND password = ?", (email, password))
+    # Connect to the database
+    try:
+        conn = connect_to_database()
+        cursor = conn.cursor()
+
+        # Query to check user credentials
+        cursor.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
         user = cursor.fetchone()
 
+        # Close the database connection
+        cursor.close()
+        conn.close()
+
         if user:
-            session['user_id'] = user.user_id
-            flash('Login successful', 'success')
-            return redirect(url_for('dashboard'))
+            # Authentication successful, redirect to the welcome page
+            return redirect(url_for('welcome'))
         else:
-            flash('Invalid email or password', 'error')
-            return render_template('index.html')
+            # Authentication failed, redirect back to the login page with an error message
+            return render_template('index.html', error='Invalid email or password')
 
-    return render_template('index.html', msg='Invalid email or password')
+    except Exception as e:
+        return f"Error: {e}"
 
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' in session:
-        return f'Welcome to the Dashboard, user #{session["user_id"]}!'
-    else:
-        flash('You need to log in first', 'error')
-        return redirect(url_for('home'))
+@app.route('/welcome')
+def welcome():
+    return "Welcome Shalini"
 
 if __name__ == '__main__':
     app.run(debug=True)
